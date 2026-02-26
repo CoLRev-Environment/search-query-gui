@@ -1,7 +1,7 @@
 const PKG_DIR = "search_query";
 
 const urlParams = new URLSearchParams(window.location.search);
-const IS_GITHUB_PAGES = window.location.hostname === "geritwagner.github.io";
+const IS_GITHUB_PAGES = window.location.hostname === "colrev-environment.github.io";
 
 const pkgSource = urlParams.get("pkg") || (IS_GITHUB_PAGES ? "remote" : "local");
 

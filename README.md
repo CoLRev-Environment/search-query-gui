@@ -10,7 +10,7 @@ The web app allows you to:
 - Export validated search strings
 
 🌐 **Live application:**
-👉 https://geritwagner.github.io/search-query/
+👉 https://colrev-environment.github.io/search-query-gui/
 
 ---
 

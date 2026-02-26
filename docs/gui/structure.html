@@ -1,570 +1,827 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <title>Search-Query Visualizer</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
 
     <style>
-        /* --- CSS VARIABLES --- */
-        :root {
-            --primary: #4f46e5;
-            --primary-dark: #3f35c5;
-            --primary-accent: #6366f1;
-            --bg-base: #f9fafb;
-            --bg-base-lighter: #eef2ff;
-            --bg-card: #ffffff;
-            --border-color: #e5e7eb;
-            --text-heading: #1f2937;
-            --text-body: #6b7280;
-            --font-stack: 'Inter', sans-serif;
-            --font-display: 'Space Grotesk', sans-serif;
-            --sidebar-width: 280px;
-            --error-red: #dc2626;
-            --warning-yellow: #d97706;
-        }
+      /* --- CSS VARIABLES --- */
+      :root {
+        --primary: #4f46e5;
+        --primary-dark: #3f35c5;
+        --primary-accent: #6366f1;
+        --bg-base: #f9fafb;
+        --bg-base-lighter: #eef2ff;
+        --bg-card: #ffffff;
+        --border-color: #e5e7eb;
+        --text-heading: #1f2937;
+        --text-body: #6b7280;
+        --font-stack: "Inter", sans-serif;
+        --font-display: "Space Grotesk", sans-serif;
+        --sidebar-width: 280px;
+        --error-red: #dc2626;
+        --warning-yellow: #d97706;
+      }
 
-        /* --- Global Resets & Body --- */
-        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: var(--font-stack); }
-        body {
-            background-color: var(--bg-base);
-            color: var(--text-heading);
-            min-height: 100vh;
-            scroll-behavior: smooth;
-            overflow-x: hidden;
-        }
+      /* --- Global Resets & Body --- */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        line-height: 1.5;
+        font-family: var(--font-stack);
+      }
+      body {
+        background-color: var(--bg-base);
+        color: var(--text-heading);
+        min-height: 100vh;
+        scroll-behavior: smooth;
+        overflow-x: hidden;
+      }
 
-        /* --- Custom Scrollbar --- */
-        body::-webkit-scrollbar { width: 8px; }
-        body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
+      /* --- Custom Scrollbar --- */
+      body::-webkit-scrollbar {
+        width: 8px;
+      }
+      body::-webkit-scrollbar-thumb {
+        background-color: var(--primary-accent);
+        border-radius: 10px;
+      }
 
-        /* --- Layout & Responsiveness --- */
+      /* --- Layout & Responsiveness --- */
+      #mobile-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 64px;
+        background-color: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        padding: 0 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      #mobile-header h1 {
+        font-size: 1.25rem;
+        font-weight: bold;
+        margin-left: 1rem;
+        display: flex;
+        align-items: center;
+      }
+      #menu-toggle {
+        border: none;
+        background: none;
+        color: var(--text-heading);
+        cursor: pointer;
+        padding: 0.5rem;
+      }
+
+      #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: var(--sidebar-width);
+        background-color: var(--bg-card);
+        border-right: 1px solid var(--border-color);
+        z-index: 60;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-out;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+        padding: 1.5rem 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      #sidebar.open {
+        transform: translateX(0);
+      }
+      #backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 55;
+        display: none;
+      }
+
+      #main-content {
+        padding-top: 64px;
+        transition: margin-left 0.3s ease-out;
+        padding-left: 0;
+      }
+      .main-container {
+        max-width: 76rem;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem;
+      }
+
+      @media (min-width: 1024px) {
         #mobile-header {
-            position: fixed; top: 0; left: 0; width: 100%; height: 64px;
-            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color);
-            z-index: 50; display: flex; align-items: center; padding: 0 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          display: none;
         }
-        #mobile-header h1 {
-            font-size: 1.25rem; font-weight: bold; margin-left: 1rem;
-            display: flex; align-items: center;
-        }
-        #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
-
         #sidebar {
-            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card);
-            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%);
-            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
-            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column;
+          transform: translateX(0);
+          width: var(--sidebar-width);
+          position: fixed;
+          padding-top: 2rem;
         }
-        #sidebar.open { transform: translateX(0); }
-        #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 55; display: none; }
-
-        #main-content { padding-top: 64px; transition: margin-left 0.3s ease-out; padding-left: 0; }
-        .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
-
-        @media (min-width: 1024px) {
-            #mobile-header { display: none; }
-            #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
-            #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
-            .main-container { padding: 0 1.5rem 2.5rem; }
-            #close-menu { display: none !important; }
+        #main-content {
+          padding-left: var(--sidebar-width);
+          padding-top: 2rem;
         }
-
-        /* --- Mobile Specific Styles --- */
+        .main-container {
+          padding: 0 1.5rem 2.5rem;
+        }
         #close-menu {
-            display: block !important;
-            border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;
+          display: none !important;
         }
+      }
 
-        /* --- Logo and Branding --- */
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #4f46e5, #6366f1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(90deg, #4f46e5, #6366f1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+      /* --- Mobile Specific Styles --- */
+      #close-menu {
+        display: block !important;
+        border: none;
+        background: none;
+        color: var(--text-heading);
+        cursor: pointer;
+        padding: 0.5rem;
+      }
 
-        /* --- Hero Section --- */
-        #hero-headline {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0;
-            line-height: 1.1;
-            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent));
-            background-size: 200% auto;
-            animation: text-flow 4s linear infinite;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            color: transparent;
-        }
+      /* --- Logo and Branding --- */
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+      .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #4f46e5, #6366f1);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+      .logo-text {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #4f46e5, #6366f1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
 
-        @keyframes text-flow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
+      /* --- Hero Section --- */
+      #hero-headline {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.1;
+        background: linear-gradient(
+          90deg,
+          var(--text-heading),
+          var(--primary),
+          var(--primary-accent)
+        );
+        background-size: 200% auto;
+        animation: text-flow 4s linear infinite;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+      }
 
-        /* --- Sidebar Navigation --- */
-        .sidebar-tool-link {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.375rem;
-            color: var(--text-heading);
-            transition: all 0.2s ease;
-            margin-bottom: 0.25rem;
-            text-decoration: none;
+      @keyframes text-flow {
+        0% {
+          background-position: 0% 50%;
         }
-        .sidebar-tool-link:hover {
-            background-color: var(--bg-base-lighter);
-            color: var(--primary);
+        100% {
+          background-position: 100% 50%;
         }
-        .sidebar-tool-link.active {
-            background-color: var(--primary);
-            color: white;
-        }
+      }
 
-        /* --- Loading Overlay --- */
-        #loading-overlay {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(255, 255, 255, 0.95);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.5s ease;
-            opacity: 1;
-        }
-        .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
-        #loading-text { font-size: 1.1rem; color: var(--text-heading); font-weight: 500; text-align: center; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+      /* --- Sidebar Navigation --- */
+      .sidebar-tool-link {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        color: var(--text-heading);
+        transition: all 0.2s ease;
+        margin-bottom: 0.25rem;
+        text-decoration: none;
+      }
+      .sidebar-tool-link:hover {
+        background-color: var(--bg-base-lighter);
+        color: var(--primary);
+      }
+      .sidebar-tool-link.active {
+        background-color: var(--primary);
+        color: white;
+      }
 
-        /* --- IFRAME MODE STYLES --- */
-        body.iframe-mode #mobile-header,
-        body.iframe-mode #sidebar,
-        body.iframe-mode #backdrop {
-            display: none !important;
+      /* --- Loading Overlay --- */
+      #loading-overlay {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(255, 255, 255, 0.95);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.5s ease;
+        opacity: 1;
+      }
+      .loader {
+        border: 4px solid var(--border-color);
+        border-top: 4px solid var(--primary);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+      }
+      #loading-text {
+        font-size: 1.1rem;
+        color: var(--text-heading);
+        font-weight: 500;
+        text-align: center;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      #content-wrapper {
+        transition: opacity 0.5s ease;
+        opacity: 0;
+      }
 
-        body.iframe-mode #main-content {
-            padding-left: 0 !important;
-            padding-top: 0 !important;
-        }
+      /* --- IFRAME MODE STYLES --- */
+      body.iframe-mode #mobile-header,
+      body.iframe-mode #sidebar,
+      body.iframe-mode #backdrop {
+        display: none !important;
+      }
 
-        body.iframe-mode .main-container {
-            padding: 0 1rem 1.5rem !important;
-        }
+      body.iframe-mode #main-content {
+        padding-left: 0 !important;
+        padding-top: 0 !important;
+      }
 
-        body.iframe-mode #hero-headline,
-        body.iframe-mode #documentation p {
-            display: none !important;
-        }
+      body.iframe-mode .main-container {
+        padding: 0 1rem 1.5rem !important;
+      }
 
-        body.iframe-mode #interactive-tool-wrap {
-            padding-top: 0 !important;
-        }
+      body.iframe-mode #hero-headline,
+      body.iframe-mode #documentation p {
+        display: none !important;
+      }
 
-        body.iframe-mode .tool-header h1 {
-            font-size: 1.25rem !important;
-            margin-top: 0.5rem !important;
-        }
+      body.iframe-mode #interactive-tool-wrap {
+        padding-top: 0 !important;
+      }
 
-        body.iframe-mode .tool-header p {
-            font-size: 0.875rem !important;
-            margin-bottom: 1rem !important;
-        }
+      body.iframe-mode .tool-header h1 {
+        font-size: 1.25rem !important;
+        margin-top: 0.5rem !important;
+      }
 
-        /* Ensure content is visible in iframe context */
-        body.loading-active {
-            height: 100vh;
-        }
+      body.iframe-mode .tool-header p {
+        font-size: 0.875rem !important;
+        margin-bottom: 1rem !important;
+      }
 
-        /* --- YOUR ORIGINAL VISUALIZER STYLES --- */
-        #visualizer-content {
-            background-color: var(--bg-card);
-            color: var(--text-main);
-            padding: 1.5rem;
-            min-height: auto;
-            overflow-x: hidden;
-            overflow-y: visible;
-            position: relative;
-        }
+      /* Ensure content is visible in iframe context */
+      body.loading-active {
+        height: 100vh;
+      }
 
-        #visualizer-content header h1 {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 0.25rem;
-        }
+      /* --- YOUR ORIGINAL VISUALIZER STYLES --- */
+      #visualizer-content {
+        background-color: var(--bg-card);
+        color: var(--text-main);
+        padding: 1.5rem;
+        min-height: auto;
+        overflow-x: hidden;
+        overflow-y: visible;
+        position: relative;
+      }
 
-        #visualizer-content header p {
-            color: var(--text-secondary);
-            margin-top: 0;
-            font-size: 0.95rem;
-        }
+      #visualizer-content header h1 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+      }
 
-        #visualizer-content .main-content-card {
-            margin-top: 1.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
+      #visualizer-content header p {
+        color: var(--text-secondary);
+        margin-top: 0;
+        font-size: 0.95rem;
+      }
 
-        #visualizer-content label {
-            display: block;
-            margin-top: 1.25rem;
-            margin-bottom: 0.25rem;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
+      #visualizer-content .main-content-card {
+        margin-top: 1.5rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
 
-        #visualizer-content #query {
-            font-size: 1.1rem !important;
-            line-height: 1.6;
-            padding: 1rem;
-            min-height: 160px;
-            font-family: 'Courier New', monospace;
-        }
+      #visualizer-content label {
+        display: block;
+        margin-top: 1.25rem;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+      }
 
-        #visualizer-content textarea {
-            display: block;
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
-            transition: border-color 0.2s, box-shadow 0.2s;
-            color: var(--text-main);
-            max-width: 100%;
-        }
+      #visualizer-content #query {
+        font-size: 1.1rem !important;
+        line-height: 1.6;
+        padding: 1rem;
+        min-height: 160px;
+        font-family: "Courier New", monospace;
+      }
 
-        #visualizer-content textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 1px var(--primary);
-            outline: none;
-        }
+      #visualizer-content textarea {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        color: var(--text-main);
+        max-width: 100%;
+      }
 
-        #visualizer-content #btn-visualize {
-            width: auto;
-            min-width: 200px;
-            padding: 0.75rem 2rem;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            color: white;
-            background-color: var(--primary);
-            cursor: pointer;
-            transition: background-color 0.2s;
-            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
-            margin-top: 1.5rem;
-            font-size: 1rem;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
+      #visualizer-content textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 1px var(--primary);
+        outline: none;
+      }
 
-        #visualizer-content #btn-visualize:hover {
-            background-color: var(--primary-dark);
-        }
+      #visualizer-content #btn-visualize {
+        width: auto;
+        min-width: 200px;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        color: white;
+        background-color: var(--primary);
+        cursor: pointer;
+        transition: background-color 0.2s;
+        box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+        margin-top: 1.5rem;
+        font-size: 1rem;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+      }
 
-        #visualizer-content #pretty-title {
-            margin-top: 1.5rem;
-            font-size: 1.25rem;
-        }
+      #visualizer-content #btn-visualize:hover {
+        background-color: var(--primary-dark);
+      }
 
-        #visualizer-content pre {
-            margin-top: 0.75rem;
-            background-color: #0b1120;
-            color: #e5e7eb;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            border: 1px solid #1f2937;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.95rem;
-            max-height: 500px;
-            overflow: auto;
-        }
+      #visualizer-content #pretty-title {
+        margin-top: 1.5rem;
+        font-size: 1.25rem;
+      }
 
-        #visualizer-content .hint {
-            margin-top: 0.5rem;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
+      #visualizer-content pre {
+        margin-top: 0.75rem;
+        background-color: #0b1120;
+        color: #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        border: 1px solid #1f2937;
+        font-family: "Consolas", "Monaco", "Courier New", monospace;
+        font-size: 0.95rem;
+        max-height: 500px;
+        overflow: auto;
+      }
 
-        #visualizer-content #result-container {
-            display: none;
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
+      #visualizer-content .hint {
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      #visualizer-content #result-container {
+        display: none;
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <header id="mobile-header">
-        <button id="menu-toggle" class="p-2">
-            <i class="fas fa-bars text-xl"></i>
-        </button>
-        <h1 class="text-xl font-bold ml-4" style="padding-top: 25px;">
-            <div class="logo-container">
-                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="100px" >
-            </div>
-        </h1>
+      <button id="menu-toggle" class="p-2">
+        <i class="fas fa-bars text-xl"></i>
+      </button>
+      <h1 class="text-xl font-bold ml-4" style="padding-top: 25px">
+        <div class="logo-container">
+          <img
+            src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg"
+            width="100px"
+          />
+        </div>
+      </h1>
     </header>
 
-    <div id="backdrop" style="display:none;"></div>
+    <div id="backdrop" style="display: none"></div>
 
     <nav id="sidebar">
-        <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-            <div class="logo-container">
-                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="200px" >
-            </div>
-            <button id="close-menu" style="border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;" class="lg:hidden">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </header>
-
-         <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
-            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
-            <a href="https://geritwagner.github.io/search-query/lint.html"  class="sidebar-tool-link active">
-                <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
-            </a>
-            <a href="https://geritwagner.github.io/search-query/translate.html" class="sidebar-tool-link">
-                <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Translate</p>
-            </a>
-
-            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
-            <a href="https://geritwagner.github.io/search-query/tokenizer.html"  class="sidebar-tool-link">
-                <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
-            </a>
-            <a href="https://geritwagner.github.io/search-query/structure.html" class="sidebar-tool-link">
-                <i class="fas fa-sitemap w-5 mr-3"></i>
-                <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Structure</p>
-            </a>
-
-            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Resources</div>
-            <a href="https://github.com/CoLRev-Environment/search-query" target="_blank" class="sidebar-tool-link">
-                <i class="fab fa-github w-5 mr-3"></i><p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">GitHub</p>
-            </a>
-            <a href="https://colrev-environment.github.io/search-query/" target="_blank" class="sidebar-tool-link">
-                <i class="fas fa-book w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Documentation</p>
-            </a>
-            <a href="https://github.com/CoLRev-Environment/search-query/blob/main/LICENSE" target="_blank" class="sidebar-tool-link">
-                <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">License</p>
-            </a>
+      <header
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid var(--border-color);
+        "
+      >
+        <div class="logo-container">
+          <img
+            src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg"
+            width="200px"
+          />
         </div>
-        <footer style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-body);">
-            Search-Query Studio © 2025
-        </footer>
+        <button
+          id="close-menu"
+          style="
+            border: none;
+            background: none;
+            color: var(--text-heading);
+            cursor: pointer;
+            padding: 0.5rem;
+          "
+          class="lg:hidden"
+        >
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </header>
+
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          margin-top: 1rem;
+          color: var(--text-heading);
+        "
+      >
+        <div
+          style="
+            padding: 1rem 0;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-body);
+            text-transform: uppercase;
+          "
+        >
+          Features
+        </div>
+        <a
+          href="https://colrev-environment.github.io/search-query-gui/lint.html"
+          class="sidebar-tool-link active"
+        >
+          <i class="fas fa-tasks w-5 mr-3"></i>
+          <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px">
+            Lint
+          </p>
+        </a>
+        <a
+          href="https://colrev-environment.github.io/search-query-gui/translate.html"
+          class="sidebar-tool-link"
+        >
+          <i class="fas fa-language w-5 mr-3"></i>
+          <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px">
+            Translate
+          </p>
+        </a>
+
+        <div
+          style="
+            padding: 1rem 0;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-body);
+            text-transform: uppercase;
+          "
+        >
+          Debug
+        </div>
+        <a
+          href="https://colrev-environment.github.io/search-query-gui/tokenizer.html"
+          class="sidebar-tool-link"
+        >
+          <i class="fas fa-microchip w-5 mr-3"></i>
+          <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px">
+            Tokenize
+          </p>
+        </a>
+        <a
+          href="https://colrev-environment.github.io/search-query-gui/structure.html"
+          class="sidebar-tool-link"
+        >
+          <i class="fas fa-sitemap w-5 mr-3"></i>
+          <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px">
+            Structure
+          </p>
+        </a>
+
+        <div
+          style="
+            padding: 1rem 0;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-body);
+            text-transform: uppercase;
+          "
+        >
+          Resources
+        </div>
+        <a
+          href="https://github.com/CoLRev-Environment/search-query"
+          target="_blank"
+          class="sidebar-tool-link"
+        >
+          <i class="fab fa-github w-5 mr-3"></i>
+          <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px">
+            GitHub
+          </p>
+        </a>
+        <a
+          href="https://colrev-environment.github.io/search-query/"
+          target="_blank"
+          class="sidebar-tool-link"
+        >
+          <i class="fas fa-book w-5 mr-3"></i>
+          <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px">
+            Documentation
+          </p>
+        </a>
+        <a
+          href="https://github.com/CoLRev-Environment/search-query/blob/main/LICENSE"
+          target="_blank"
+          class="sidebar-tool-link"
+        >
+          <i class="fas fa-file-contract w-5 mr-3"></i>
+          <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px">
+            License
+          </p>
+        </a>
+      </div>
+      <footer
+        style="
+          margin-top: auto;
+          padding-top: 1rem;
+          border-top: 1px solid var(--border-color);
+          font-size: 0.75rem;
+          color: var(--text-body);
+        "
+      >
+        Search-Query Studio © 2025
+      </footer>
     </nav>
 
     <div id="main-content">
-        <div id="interactive-tool-wrap">
-            <div class="main-container">
-                <section id="documentation" style="width: 100%; padding-top: 0;">
-                    <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
-                        Search Query Studio
-                    </h1>
-                    <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
-                        The web interface for search-query.
-                    </p>
-                </section>
+      <div id="interactive-tool-wrap">
+        <div class="main-container">
+          <section id="documentation" style="width: 100%; padding-top: 0">
+            <h1
+              id="hero-headline"
+              style="
+                margin-bottom: 0.5rem;
+                color: var(--text-heading);
+                text-align: center;
+              "
+            >
+              Search Query Studio
+            </h1>
+            <p
+              style="
+                font-size: 1.25rem;
+                color: var(--text-body);
+                text-align: center;
+                max-width: 42rem;
+                margin: 0 auto 2rem;
+              "
+            >
+              The web interface for search-query.
+            </p>
+          </section>
 
-                <div id="tool-area-content" style="padding-bottom:50px;">
-                    <div id="loading-overlay">
-                        <div class="loader"></div>
-                        <div id="loading-text">Initializing Search Query...</div>
-                    </div>
-
-                    <div id="content-wrapper">
-                        <div id="visualizer-content">
-                            <header>
-                                <h1>Search-Query Visualizer</h1>
-                                <p>Indent and visualize nested subqueries based on parentheses.</p>
-                            </header>
-
-                            <div class="main-content-card">
-                                <label for="query">Query</label>
-                                <textarea id="query" rows="8">TS=(("large language model*" OR "LLM*" OR "generative AI" OR "genAI" OR "foundation model*") AND ("work performance" OR "job performance" OR "individual performance" OR productivity OR efficiency OR effectiveness) AND (workplace OR "knowledge worker*" OR employee* OR worker* OR "organizational context" OR "organizational setting" OR "professional" OR "business"))</textarea>
-
-                                <button id="btn-visualize">Visualize structure</button>
-                            </div>
-
-                            <div id="result-container">
-                                <h2 id="pretty-title">Indented structure</h2>
-                                <pre id="pretty-output"></pre>
-                                <p class="hint">
-                                    Parentheses define the indentation levels. Quoted phrases are kept together; boolean operators are placed on separate lines.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <div id="tool-area-content" style="padding-bottom: 50px">
+            <div id="loading-overlay">
+              <div class="loader"></div>
+              <div id="loading-text">Initializing Search Query...</div>
             </div>
+
+            <div id="content-wrapper">
+              <div id="visualizer-content">
+                <header>
+                  <h1>Search-Query Visualizer</h1>
+                  <p>
+                    Indent and visualize nested subqueries based on parentheses.
+                  </p>
+                </header>
+
+                <div class="main-content-card">
+                  <label for="query">Query</label>
+                  <textarea id="query" rows="8">
+TS=(("large language model*" OR "LLM*" OR "generative AI" OR "genAI" OR "foundation model*") AND ("work performance" OR "job performance" OR "individual performance" OR productivity OR efficiency OR effectiveness) AND (workplace OR "knowledge worker*" OR employee* OR worker* OR "organizational context" OR "organizational setting" OR "professional" OR "business"))</textarea
+                  >
+
+                  <button id="btn-visualize">Visualize structure</button>
+                </div>
+
+                <div id="result-container">
+                  <h2 id="pretty-title">Indented structure</h2>
+                  <pre id="pretty-output"></pre>
+                  <p class="hint">
+                    Parentheses define the indentation levels. Quoted phrases
+                    are kept together; boolean operators are placed on separate
+                    lines.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
 
     <script src="structure.js"></script>
 
     <script>
-        const DOM = {
-            sidebar: document.getElementById('sidebar'),
-            menuToggle: document.getElementById('menu-toggle'),
-            closeMenuBtn: document.getElementById('close-menu'),
-            backdrop: document.getElementById('backdrop'),
-            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
+      const DOM = {
+        sidebar: document.getElementById("sidebar"),
+        menuToggle: document.getElementById("menu-toggle"),
+        closeMenuBtn: document.getElementById("close-menu"),
+        backdrop: document.getElementById("backdrop"),
+        sidebarToolLinks: document.querySelectorAll(".sidebar-tool-link"),
+      };
+
+      const isEmbedded = window.parent !== window;
+      let lastSentHeight = 0;
+
+      if (isEmbedded) {
+        document.body.classList.add("iframe-mode");
+        DOM.sidebar.style.display = "none";
+        document.getElementById("mobile-header").style.display = "none";
+      }
+
+      function toggleSidebar(forceClose = false) {
+        if (isEmbedded) return;
+        const isOpen = DOM.sidebar.classList.contains("open");
+        const shouldOpen = forceClose ? false : !isOpen;
+        if (shouldOpen) {
+          DOM.sidebar.classList.add("open");
+          DOM.backdrop.style.display = "block";
+          document.body.style.overflow = "hidden";
+        } else {
+          DOM.sidebar.classList.remove("open");
+          DOM.backdrop.style.display = "none";
+          document.body.style.overflow = "";
+        }
+      }
+
+      function updateActiveSidebarItem(activeTool) {
+        if (isEmbedded) return;
+        DOM.sidebarToolLinks.forEach((link) => {
+          link.classList.remove("active");
+          if (link.getAttribute("href")?.includes(activeTool))
+            link.classList.add("active");
+        });
+      }
+
+      const loader = document.getElementById("loading-overlay");
+      const loadingText = document.getElementById("loading-text");
+      const contentWrapper = document.getElementById("content-wrapper");
+
+      function sendHeight() {
+        if (!isEmbedded) return;
+
+        // Calculate height based on the main-container's scroll height
+        const mainContainer = document.querySelector(".main-container");
+        if (!mainContainer) return;
+
+        // Use scrollHeight of container which includes all content even if not visible in viewport
+        const contentHeight =
+          mainContainer.offsetHeight + mainContainer.offsetTop;
+        const finalHeight = Math.ceil(contentHeight + 40); // Buffer
+
+        // Only send if height significantly changed to prevent infinite loops
+        if (Math.abs(finalHeight - lastSentHeight) > 5) {
+          lastSentHeight = finalHeight;
+          window.parent.postMessage(
+            { type: "setHeight", height: finalHeight },
+            "*",
+          );
+        }
+      }
+
+      let heightTimeout;
+      function debouncedSendHeight() {
+        clearTimeout(heightTimeout);
+        heightTimeout = setTimeout(sendHeight, 100);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        if (!isEmbedded) {
+          updateActiveSidebarItem("structure.html");
+          DOM.menuToggle.addEventListener("click", () => toggleSidebar());
+          DOM.backdrop.addEventListener("click", () => toggleSidebar(true));
+          DOM.closeMenuBtn.addEventListener("click", () => toggleSidebar(true));
+        }
+
+        // Pyodide Logic
+        window.appendStatus = function (msg) {
+          const cleanMsg = msg.replace(/\u001b\[.*?m/g, "").trim();
+          if (loadingText) loadingText.textContent = cleanMsg;
+
+          if (
+            cleanMsg.toLowerCase().includes("done") ||
+            cleanMsg.toLowerCase().includes("ready")
+          ) {
+            loader.style.opacity = "0";
+            contentWrapper.style.opacity = "1";
+            setTimeout(() => {
+              loader.style.display = "none";
+              document.body.classList.remove("loading-active");
+              debouncedSendHeight();
+            }, 500);
+          }
         };
 
-        const isEmbedded = window.parent !== window;
-        let lastSentHeight = 0;
-
-        if (isEmbedded) {
-            document.body.classList.add('iframe-mode');
-            DOM.sidebar.style.display = 'none';
-            document.getElementById('mobile-header').style.display = 'none';
-        }
-
-        function toggleSidebar(forceClose = false) {
-            if (isEmbedded) return;
-            const isOpen = DOM.sidebar.classList.contains('open');
-            const shouldOpen = forceClose ? false : !isOpen;
-            if (shouldOpen) {
-                DOM.sidebar.classList.add('open');
-                DOM.backdrop.style.display = 'block';
-                document.body.style.overflow = 'hidden';
-            } else {
-                DOM.sidebar.classList.remove('open');
-                DOM.backdrop.style.display = 'none';
-                document.body.style.overflow = '';
+        // Mutation Observer to watch for content changes
+        const observer = new MutationObserver((mutations) => {
+          let shouldUpdate = false;
+          for (const m of mutations) {
+            if (
+              m.type === "childList" ||
+              (m.type === "attributes" && m.attributeName === "style")
+            ) {
+              shouldUpdate = true;
+              break;
             }
-        }
-
-        function updateActiveSidebarItem(activeTool) {
-            if (isEmbedded) return;
-            DOM.sidebarToolLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href')?.includes(activeTool)) link.classList.add('active');
-            });
-        }
-
-        const loader = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        const contentWrapper = document.getElementById('content-wrapper');
-
-        function sendHeight() {
-            if (!isEmbedded) return;
-
-            // Calculate height based on the main-container's scroll height
-            const mainContainer = document.querySelector('.main-container');
-            if (!mainContainer) return;
-
-            // Use scrollHeight of container which includes all content even if not visible in viewport
-            const contentHeight = mainContainer.offsetHeight + mainContainer.offsetTop;
-            const finalHeight = Math.ceil(contentHeight + 40); // Buffer
-
-            // Only send if height significantly changed to prevent infinite loops
-            if (Math.abs(finalHeight - lastSentHeight) > 5) {
-                lastSentHeight = finalHeight;
-                window.parent.postMessage({ type: 'setHeight', height: finalHeight }, '*');
-            }
-        }
-
-        let heightTimeout;
-        function debouncedSendHeight() {
-            clearTimeout(heightTimeout);
-            heightTimeout = setTimeout(sendHeight, 100);
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!isEmbedded) {
-                updateActiveSidebarItem('structure.html');
-                DOM.menuToggle.addEventListener('click', () => toggleSidebar());
-                DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
-                DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
-            }
-
-            // Pyodide Logic
-            window.appendStatus = function(msg) {
-                const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim();
-                if (loadingText) loadingText.textContent = cleanMsg;
-
-                if (cleanMsg.toLowerCase().includes('done') || cleanMsg.toLowerCase().includes('ready')) {
-                    loader.style.opacity = '0';
-                    contentWrapper.style.opacity = '1';
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                        document.body.classList.remove('loading-active');
-                        debouncedSendHeight();
-                    }, 500);
-                }
-            };
-
-            // Mutation Observer to watch for content changes
-            const observer = new MutationObserver((mutations) => {
-                let shouldUpdate = false;
-                for (const m of mutations) {
-                    if (m.type === 'childList' || (m.type === 'attributes' && m.attributeName === 'style')) {
-                        shouldUpdate = true;
-                        break;
-                    }
-                }
-                if (shouldUpdate) debouncedSendHeight();
-            });
-
-            observer.observe(document.querySelector('.main-container'), {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['style', 'class']
-            });
-
-            document.getElementById('btn-visualize')?.addEventListener('click', () => {
-                setTimeout(debouncedSendHeight, 200);
-            });
-
-            // Initial and fallback
-            setTimeout(debouncedSendHeight, 500);
-            setTimeout(() => {
-                if (loader.style.display !== 'none') {
-                    loader.style.display = 'none';
-                    contentWrapper.style.opacity = '1';
-                    debouncedSendHeight();
-                }
-            }, 4000);
+          }
+          if (shouldUpdate) debouncedSendHeight();
         });
 
-        window.addEventListener('resize', debouncedSendHeight);
+        observer.observe(document.querySelector(".main-container"), {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["style", "class"],
+        });
+
+        document
+          .getElementById("btn-visualize")
+          ?.addEventListener("click", () => {
+            setTimeout(debouncedSendHeight, 200);
+          });
+
+        // Initial and fallback
+        setTimeout(debouncedSendHeight, 500);
+        setTimeout(() => {
+          if (loader.style.display !== "none") {
+            loader.style.display = "none";
+            contentWrapper.style.opacity = "1";
+            debouncedSendHeight();
+          }
+        }, 4000);
+      });
+
+      window.addEventListener("resize", debouncedSendHeight);
     </script>
-</body>
+  </body>
 </html>

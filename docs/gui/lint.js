@@ -3,7 +3,7 @@
 const PKG_DIR = "search_query";
 
 const urlParams = new URLSearchParams(window.location.search);
-const IS_GITHUB_PAGES = window.location.hostname === "geritwagner.github.io";
+const IS_GITHUB_PAGES = window.location.hostname === "colrev-environment.github.io";
 
 // pkgSource: 'local' or 'remote'
 // - local: use the package from your repo (layout: repo_root/search_query/, docs/gui/…)
