@@ -5,7 +5,7 @@ const IS_GITHUB_PAGES = window.location.hostname === "colrev-environment.github.
 
 const pkgSource = urlParams.get("pkg") || (IS_GITHUB_PAGES ? "remote" : "local");
 
-const LOCAL_FETCH_BASE = new URL("../../search_query/", window.location.href).toString();
+const LOCAL_FETCH_BASE = new URL("search_query/", window.location.href).toString();
 const REMOTE_FETCH_BASE =
   "https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/search_query/";
 
