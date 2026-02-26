@@ -1,4 +1,4 @@
-name: Deploy Sphinx documentation to GitHub Pages
+name: Deploy GUI documentation to GitHub Pages
 
 on:
   workflow_dispatch:
@@ -21,27 +21,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install uv and dependencies
+      - name: Prepare GUI artifact
         run: |
-          pip install uv
-          uv venv
-          uv pip install -e .[docs]
-          echo "Dependencies installed successfully"
-
-      - name: Build documentation
-        run: |
-          uv run sphinx-build -b html docs/source _build/html
-          echo "Documentation built successfully"
-
-      - name: Add GUI assets
-        run: |
-          mkdir -p _build/html/gui
-          cp -r docs/gui/* _build/html/gui/
+          mkdir -p _build/html
+          cp -r docs/gui/* _build/html/
 
       - name: Retrieve upstream package files
         uses: actions/checkout@v4
@@ -53,7 +36,7 @@ jobs:
 
       - name: Add search_query package to GUI
         run: |
-          TARGET_DIR="_build/html/gui/search_query"
+          TARGET_DIR="_build/html/search_query"
           mkdir -p "$TARGET_DIR"
           cp -r _upstream/search_query/* "$TARGET_DIR"/
 
