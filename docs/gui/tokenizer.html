@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>Search-Query Tokenizer</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    
+
     <!-- Highlight.js for JSON coloring -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -12,7 +12,7 @@
 
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-    
+
     <style>
         /* --- CSS VARIABLES --- */
         :root {
@@ -32,40 +32,40 @@
 
         /* --- Global Resets & Body --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: var(--font-stack); }
-        body { 
-            background-color: var(--bg-base); 
-            color: var(--text-heading); 
-            min-height: 100vh; 
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-heading);
+            min-height: 100vh;
             scroll-behavior: smooth;
             overflow-x: hidden;
         }
-        
+
         /* --- Custom Scrollbar --- */
         body::-webkit-scrollbar { width: 8px; }
         body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
 
         /* --- Layout & Responsiveness --- */
-        #mobile-header { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
-            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
-            z-index: 50; display: flex; align-items: center; padding: 0 1rem; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        #mobile-header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 64px;
+            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color);
+            z-index: 50; display: flex; align-items: center; padding: 0 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        #mobile-header h1 { 
-            font-size: 1.25rem; font-weight: bold; margin-left: 1rem; 
+        #mobile-header h1 {
+            font-size: 1.25rem; font-weight: bold; margin-left: 1rem;
             display: flex; align-items: center;
         }
         #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
 
-        #sidebar { 
-            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
-            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); 
-            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); 
-            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; 
+        #sidebar {
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%);
+            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column;
         }
         #sidebar.open { transform: translateX(0); }
         #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 55; display: none; }
-        
+
         #main-content { padding-top: 64px; transition: margin-left 0.3s ease-out; padding-left: 0; }
         .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
 
@@ -76,13 +76,13 @@
             .main-container { padding: 0 1.5rem 2.5rem; }
             #close-menu { display: none !important; }
         }
-        
+
         /* --- Mobile Specific Styles --- */
         #close-menu {
             display: block !important;
             border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;
         }
-        
+
         /* --- Logo and Branding --- */
         .logo-container {
             display: flex;
@@ -111,7 +111,7 @@
         }
 
         /* --- Hero Section --- */
-        #hero-headline { 
+        #hero-headline {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 2.5rem;
             font-weight: 700;
@@ -125,7 +125,7 @@
             -webkit-text-fill-color: transparent;
             color: transparent;
         }
-        
+
         @keyframes text-flow {
             0% { background-position: 0% 50%; }
             100% { background-position: 100% 50%; }
@@ -154,7 +154,7 @@
         /* --- CORE TOKENIZER CSS --- */
         .tool-header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         .tool-header p { color: var(--text-body); margin-top: 0; font-size: 0.95rem; }
-        
+
         .main-content-card {
             margin-top: 1.5rem;
             background: var(--bg-card);
@@ -165,7 +165,7 @@
         }
 
         label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
-        
+
         #query {
             font-size: 1.1rem !important;
             line-height: 1.6;
@@ -173,29 +173,29 @@
             min-height: 120px;
             font-family: 'Courier New', monospace;
         }
-        
-        textarea, select { 
-            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+
+        textarea, select {
+            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
             transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-heading);
             max-width: 100%;
         }
-        
-        textarea:focus, select:focus { 
-            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
+
+        textarea:focus, select:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none;
         }
 
         #btn-tokenize {
             width: auto;
             min-width: 200px;
             padding: 0.75rem 2rem;
-            border: none; 
-            border-radius: 0.5rem; 
-            font-weight: 600; 
-            color: white; 
-            background-color: var(--primary); 
-            cursor: pointer; 
-            transition: background-color 0.2s; 
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary);
+            cursor: pointer;
+            transition: background-color 0.2s;
             box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
             margin-top: 1.5rem;
             font-size: 1rem;
@@ -208,16 +208,16 @@
 
         #platform { max-width: 300px; }
 
-        #status { display:none; } 
-        #status-display { 
-            margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
-            border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
+        #status { display:none; }
+        #status-display {
+            margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80;
+            border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500;
         }
 
         /* --- Output Table Styles --- */
         #tokens-table {
-            width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-card); 
-            border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden; 
+            width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-card);
+            border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         #tokens-table th, #tokens-table td { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
@@ -250,7 +250,7 @@
         .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
         .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
         .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
-        
+
         /* --- LOADING OVERLAY STYLES --- */
         #loading-overlay {
             position: fixed;
@@ -260,7 +260,7 @@
             height: 100%;
             background-color: rgba(255, 255, 255, 0.95);
             z-index: 1000;
-            display: flex; 
+            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -286,24 +286,24 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
+
         /* Content wrapper */
-        #content-wrapper { 
-            transition: opacity 0.5s ease; 
+        #content-wrapper {
+            transition: opacity 0.5s ease;
             opacity: 0;
             display: block;
         }
-        
+
         /* Tool content container */
         .tool-content {
-            padding: 1rem; 
-            background: var(--bg-card); 
-            border: 1px solid var(--border-color); 
-            border-radius: 0.75rem; 
+            padding: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             margin-top: 1.5rem;
         }
-        
+
         /* Footer Links */
         .footer-links {
             display: flex;
@@ -319,48 +319,48 @@
         .footer-links a:hover {
             color: var(--primary);
         }
-        
+
         /* Ensure content is visible in iframe context */
         body.loading-active {
             height: 100vh;
         }
-        
+
         /* Iframe mode styling - HIDE navigation elements */
         body.iframe-mode #mobile-header,
         body.iframe-mode #sidebar,
         body.iframe-mode #backdrop {
             display: none !important;
         }
-        
+
         /* Iframe mode - adjust main content */
         body.iframe-mode #main-content {
             padding: 0 !important;
             margin-left: 0 !important;
             padding-top: 0 !important;
         }
-        
+
         body.iframe-mode .main-container {
             max-width: 100% !important;
             padding: 1rem !important;
         }
-        
+
         /* Hide hero section in iframe mode */
         body.iframe-mode #documentation {
             display: none !important;
         }
-        
+
         /* Normal webpage mode - SHOW navigation elements */
         body:not(.iframe-mode) #mobile-header,
         body:not(.iframe-mode) #sidebar {
             display: block;
         }
-        
+
         /* Adjust main content for normal webpage */
         body:not(.iframe-mode) #main-content {
             padding-top: 64px;
             padding-left: 0;
         }
-        
+
         @media (min-width: 1024px) {
             body:not(.iframe-mode) #mobile-header { display: none; }
             body:not(.iframe-mode) #sidebar { transform: translateX(0); }
@@ -395,21 +395,21 @@
                 <i class="fas fa-times text-xl"></i>
             </button>
         </header>
-        
+
          <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
-            <a href="https://geritwagner.github.io/search-query/gui/lint.html"  class="sidebar-tool-link active">
+            <a href="https://geritwagner.github.io/search-query/lint.html"  class="sidebar-tool-link active">
                 <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
             </a>
-            <a href="https://geritwagner.github.io/search-query/gui/translate.html" class="sidebar-tool-link">
+            <a href="https://geritwagner.github.io/search-query/translate.html" class="sidebar-tool-link">
                 <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Translate</p>
             </a>
-            
+
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
-            <a href="https://geritwagner.github.io/search-query/gui/tokenizer.html"  class="sidebar-tool-link">
+            <a href="https://geritwagner.github.io/search-query/tokenizer.html"  class="sidebar-tool-link">
                 <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
             </a>
-            <a href="https://geritwagner.github.io/search-query/gui/structure.html" class="sidebar-tool-link">
+            <a href="https://geritwagner.github.io/search-query/structure.html" class="sidebar-tool-link">
                 <i class="fas fa-sitemap w-5 mr-3"></i>
                 <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Structure</p>
             </a>
@@ -425,12 +425,12 @@
                 <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">License</p>
             </a>
         </div>
-        
+
         <footer style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-body);">
             Search-Query Studio © 2025
         </footer>
     </nav>
-    
+
     <!-- Main Content Area -->
     <div id="main-content">
         <div id="interactive-tool-wrap">
@@ -451,14 +451,14 @@
                         <div class="loader"></div>
                         <div id="loading-text">Initializing search-query...</div>
                     </div>
-                    
+
                     <div id="content-wrapper">
                         <div class="tool-header">
                             <h1>Search-Query Tokenizer</h1>
                             <p>Paste a query, select a platform, and see the raw tokens from <code>tokenize()</code>.</p>
                         </div>
 
-                        <div id="status">Loading Search Query…</div> 
+                        <div id="status">Loading Search Query…</div>
                         <div id="status-display">Loading Search Query…</div>
 
                         <div class="main-content-card">
@@ -501,7 +501,7 @@
 
     <script src="search_query_pkg_tree.js"></script>
     <script src="tokenize.js"></script>
-    
+
     <script>
         // --- TOKENIZER FUNCTIONALITY ---
         const isEmbedded = window.parent !== window;
@@ -518,26 +518,26 @@
 
         function updateJsonOutput(jsonData) {
             const codeElement = document.getElementById('output');
-            
+
             // 1. Convert to Pretty String
             const formattedJson = JSON.stringify(jsonData, null, 2);
-            
+
             // 2. Set text content
             codeElement.textContent = formattedJson;
-            
+
             // 3. Clear markers
             codeElement.removeAttribute('data-highlighted');
-            
+
             // 4. Trigger Highlight.js
             hljs.highlightElement(codeElement);
-            
+
             console.log('JSON output highlighted with VS Code theme');
         }
 
         // --- UTILITIES ---
         function copyJsonToClipboard() {
             const codeElement = document.getElementById('output');
-            const jsonText = codeElement.textContent; 
+            const jsonText = codeElement.textContent;
             navigator.clipboard.writeText(jsonText).then(() => {
                 const copyBtn = document.getElementById('copy-json');
                 if (copyBtn) {
@@ -581,39 +581,39 @@
                 document.body.style.overflowX = 'auto';
                 return;
             }
-            
+
             // Hide scrollbars when embedded
             document.body.style.overflow = 'hidden';
-            
+
             // Don't calculate during loading
             if (loader.style.display !== 'none') return;
-            
+
             // Get the main content container - this is the container that holds all tool content
             const mainContainer = document.querySelector('.main-container');
             if (!mainContainer) return;
-            
+
             // Get all direct children of the main container that are visible
             const containerChildren = Array.from(mainContainer.children);
-            
+
             // Find the last visible element in the DOM order
             let lastVisibleElement = null;
             let maxBottom = 0;
-            
+
             // Look through all children in reverse order to find the last visible one
             for (let i = containerChildren.length - 1; i >= 0; i--) {
                 const child = containerChildren[i];
                 const style = window.getComputedStyle(child);
-                
+
                 // Skip hidden elements
                 if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
                     continue;
                 }
-                
+
                 // Check if this element is actually in the document flow and visible
                 const rect = child.getBoundingClientRect();
                 if (rect.height > 0 && rect.width > 0) {
                     const elementBottom = rect.bottom + window.pageYOffset;
-                    
+
                     // Track the last visible element
                     if (elementBottom > maxBottom) {
                         maxBottom = elementBottom;
@@ -622,14 +622,14 @@
                     }
                 }
             }
-            
+
             // If we didn't find a last element, use the main container itself
             if (!lastVisibleElement) {
                 lastVisibleElement = mainContainer;
                 const rect = mainContainer.getBoundingClientRect();
                 maxBottom = rect.bottom + window.pageYOffset;
             }
-            
+
             // SPECIAL HANDLING: If we have a tool-content element, check its children too
             const toolContent = document.querySelector('.tool-content');
             if (toolContent && toolContent.style.display !== 'none') {
@@ -638,11 +638,11 @@
                 for (let i = toolChildren.length - 1; i >= 0; i--) {
                     const child = toolChildren[i];
                     const style = window.getComputedStyle(child);
-                    
+
                     if (style.display === 'none' || style.visibility === 'hidden') {
                         continue;
                     }
-                    
+
                     const rect = child.getBoundingClientRect();
                     if (rect.height > 0) {
                         const elementBottom = rect.bottom + window.pageYOffset;
@@ -653,25 +653,25 @@
                     }
                 }
             }
-            
+
             // Get the top of the document
             const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
-            
+
             // Calculate height: from top of document to bottom of last visible element
             let contentHeight = maxBottom - docTop;
-            
+
             // Ensure we're not getting negative or too small height
             contentHeight = Math.max(contentHeight, 100);
-            
+
             // Add a small buffer (20px) to prevent cut-off
             const finalHeight = contentHeight + 20;
-            
+
             // Debug logging
             console.log('Height calculation:');
             console.log('- Last element:', lastVisibleElement?.tagName, lastVisibleElement?.id);
             console.log('- Content height:', contentHeight);
             console.log('- Final height:', finalHeight);
-            
+
             // Send to parent frame
             window.parent.postMessage(
                 { type: 'setHeight', height: Math.ceil(finalHeight) },
@@ -679,18 +679,18 @@
             );
         }
         // ==================== END OF HEIGHT CALCULATION ====================
-        
+
         // --- PYODIDE SETUP ---
-        const originalAppendStatus = window.appendStatus || function(msg) { 
+        const originalAppendStatus = window.appendStatus || function(msg) {
             const statusDiv = document.getElementById('status');
             if (statusDiv) {
-                statusDiv.textContent = msg; 
+                statusDiv.textContent = msg;
             }
-            console.log("Pyodide Hook:", msg); 
+            console.log("Pyodide Hook:", msg);
         };
-        
+
         window.appendStatus = function(msg) {
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim();
             if (loadingText) loadingText.textContent = cleanMsg;
 
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
@@ -701,7 +701,7 @@
 
                 setTimeout(() => {
                     loader.style.display = 'none';
-                    
+
                     // CRITICAL: Only lock overflow if embedded
                     if (isEmbedded) {
                         document.body.style.overflow = 'hidden';
@@ -712,7 +712,7 @@
                         // Remove iframe mode class if it exists
                         document.body.classList.remove('iframe-mode');
                     }
-                    
+
                     btnTokenize.disabled = false;
                     debouncedSendHeight();
                 }, 500);
@@ -722,9 +722,9 @@
                 loader.style.opacity = '1';
                 contentWrapper.style.opacity = '0';
             }
-            
+
             originalAppendStatus(msg);
-            setTimeout(debouncedSendHeight, 50); 
+            setTimeout(debouncedSendHeight, 50);
         };
 
         // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
@@ -753,14 +753,14 @@
         function toggleSidebar(forceClose = false) {
             // Don't toggle sidebar in iframe mode
             if (isEmbedded) return;
-            
+
             const isOpen = DOM.sidebar.classList.contains('open');
             const shouldOpen = forceClose ? false : !isOpen;
 
             if (shouldOpen) {
                 DOM.sidebar.classList.add('open');
                 DOM.backdrop.style.display = 'block';
-                document.body.style.overflow = 'hidden'; 
+                document.body.style.overflow = 'hidden';
             } else {
                 DOM.sidebar.classList.remove('open');
                 DOM.backdrop.style.display = 'none';
@@ -787,10 +787,10 @@
             } else {
                 document.body.classList.remove('iframe-mode');
                 document.body.style.overflow = 'auto';
-                
+
                 // Initialize sidebar only in normal webpage mode
                 updateActiveSidebarItem('tokenizer.html');
-                
+
                 // Mobile Menu Toggles - only in normal webpage
                 DOM.menuToggle.addEventListener('click', () => toggleSidebar());
                 DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
@@ -805,25 +805,25 @@
                     });
                 });
             }
-            
+
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
-            loader.style.display = 'flex'; 
+            loader.style.display = 'flex';
             loadingText.textContent = "Initializing search-query...";
             btnTokenize.disabled = true;
 
             // Add event listeners if buttons exist
             const copyBtn = document.getElementById('copy-json');
             const downloadBtn = document.getElementById('download-json');
-            
+
             if (copyBtn) {
                 copyBtn.addEventListener('click', copyJsonToClipboard);
             }
-            
+
             if (downloadBtn) {
                 downloadBtn.addEventListener('click', downloadJson);
             }
-            
+
             // When tokenize button is clicked
             btnTokenize.addEventListener('click', () => {
                 setTimeout(debouncedSendHeight, 800);
@@ -835,17 +835,17 @@
             window.addEventListener('load', () => {
                 setTimeout(debouncedSendHeight, 100);
             });
-            
+
             // Listen for resize events
             window.addEventListener('resize', debouncedSendHeight);
-            
+
             // Observe DOM changes - MORE TARGETED
             const observer = new MutationObserver((mutations) => {
                 // Check if any mutation affects visible content
                 let shouldUpdate = false;
                 for (const mutation of mutations) {
                     // Check for changes in display, visibility, or content
-                    if (mutation.type === 'attributes' && 
+                    if (mutation.type === 'attributes' &&
                         (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
                         shouldUpdate = true;
                         break;
@@ -853,9 +853,9 @@
                     if (mutation.type === 'childList') {
                         // Check if children were added/removed from visible areas
                         const target = mutation.target;
-                        if (target.id === 'content-wrapper' || 
+                        if (target.id === 'content-wrapper' ||
                             target.closest('#content-wrapper') ||
-                            target.id === 'output' || 
+                            target.id === 'output' ||
                             target.id === 'tokens-table' ||
                             target.closest('.tool-content') ||
                             target.closest('.main-container')) {
@@ -868,30 +868,30 @@
                     debouncedSendHeight();
                 }
             });
-            
-            observer.observe(document.body, { 
-                childList: true, 
+
+            observer.observe(document.body, {
+                childList: true,
                 subtree: true,
                 attributes: true,
                 attributeFilter: ['style', 'class', 'display']
             });
-            
+
             // Also listen for details toggle (expand/collapse)
             document.querySelectorAll('details').forEach(details => {
                 details.addEventListener('toggle', debouncedSendHeight);
             });
-            
+
             // Listen for content changes in output
             const outputElement = document.getElementById('output');
             if (outputElement) {
                 const outputObserver = new MutationObserver(debouncedSendHeight);
-                outputObserver.observe(outputElement, { 
+                outputObserver.observe(outputElement, {
                     characterData: true,
                     childList: true,
-                    subtree: true 
+                    subtree: true
                 });
             }
-            
+
             // Initial height calculation
             setTimeout(debouncedSendHeight, 100);
         });

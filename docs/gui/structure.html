@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <title>Search-Query Visualizer</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    
+
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-    
+
     <style>
         /* --- CSS VARIABLES --- */
         :root {
@@ -23,46 +23,46 @@
             --font-stack: 'Inter', sans-serif;
             --font-display: 'Space Grotesk', sans-serif;
             --sidebar-width: 280px;
-            --error-red: #dc2626;     
+            --error-red: #dc2626;
             --warning-yellow: #d97706;
         }
 
         /* --- Global Resets & Body --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: var(--font-stack); }
-        body { 
-            background-color: var(--bg-base); 
-            color: var(--text-heading); 
-            min-height: 100vh; 
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-heading);
+            min-height: 100vh;
             scroll-behavior: smooth;
             overflow-x: hidden;
         }
-        
+
         /* --- Custom Scrollbar --- */
         body::-webkit-scrollbar { width: 8px; }
         body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
 
         /* --- Layout & Responsiveness --- */
-        #mobile-header { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
-            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
-            z-index: 50; display: flex; align-items: center; padding: 0 1rem; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        #mobile-header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 64px;
+            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color);
+            z-index: 50; display: flex; align-items: center; padding: 0 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        #mobile-header h1 { 
-            font-size: 1.25rem; font-weight: bold; margin-left: 1rem; 
+        #mobile-header h1 {
+            font-size: 1.25rem; font-weight: bold; margin-left: 1rem;
             display: flex; align-items: center;
         }
         #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
 
-        #sidebar { 
-            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
-            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); 
-            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); 
-            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; 
+        #sidebar {
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%);
+            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column;
         }
         #sidebar.open { transform: translateX(0); }
         #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 55; display: none; }
-        
+
         #main-content { padding-top: 64px; transition: margin-left 0.3s ease-out; padding-left: 0; }
         .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
 
@@ -73,13 +73,13 @@
             .main-container { padding: 0 1.5rem 2.5rem; }
             #close-menu { display: none !important; }
         }
-        
+
         /* --- Mobile Specific Styles --- */
         #close-menu {
             display: block !important;
             border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;
         }
-        
+
         /* --- Logo and Branding --- */
         .logo-container {
             display: flex;
@@ -108,7 +108,7 @@
         }
 
         /* --- Hero Section --- */
-        #hero-headline { 
+        #hero-headline {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 2.5rem;
             font-weight: 700;
@@ -122,7 +122,7 @@
             -webkit-text-fill-color: transparent;
             color: transparent;
         }
-        
+
         @keyframes text-flow {
             0% { background-position: 0% 50%; }
             100% { background-position: 100% 50%; }
@@ -149,23 +149,23 @@
         }
 
         /* --- Loading Overlay --- */
-        #loading-overlay { 
-            position: fixed; 
-            inset: 0; 
-            background-color: rgba(255, 255, 255, 0.95); 
-            z-index: 1000; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            transition: opacity 0.5s ease; 
-            opacity: 1; 
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+            opacity: 1;
         }
         .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
         #loading-text { font-size: 1.1rem; color: var(--text-heading); font-weight: 500; text-align: center; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
-        
+
         /* --- IFRAME MODE STYLES --- */
         body.iframe-mode #mobile-header,
         body.iframe-mode #sidebar,
@@ -200,12 +200,12 @@
             font-size: 0.875rem !important;
             margin-bottom: 1rem !important;
         }
-        
+
         /* Ensure content is visible in iframe context */
         body.loading-active {
             height: 100vh;
         }
-        
+
         /* --- YOUR ORIGINAL VISUALIZER STYLES --- */
         #visualizer-content {
             background-color: var(--bg-card);
@@ -216,7 +216,7 @@
             overflow-y: visible;
             position: relative;
         }
-        
+
         #visualizer-content header h1 {
             font-size: 1.5rem;
             font-weight: bold;
@@ -318,13 +318,13 @@
             font-size: 0.8rem;
             color: var(--text-secondary);
         }
-        
+
         #visualizer-content #result-container {
-            display: none; 
-            margin-top: 1.5rem; 
-            padding: 1rem; 
+            display: none;
+            margin-top: 1.5rem;
+            padding: 1rem;
             background: var(--bg-card);
-            border: 1px solid var(--border-color); 
+            border: 1px solid var(--border-color);
             border-radius: 0.75rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
@@ -354,21 +354,21 @@
                 <i class="fas fa-times text-xl"></i>
             </button>
         </header>
-        
+
          <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
-            <a href="https://geritwagner.github.io/search-query/gui/lint.html"  class="sidebar-tool-link active">
+            <a href="https://geritwagner.github.io/search-query/lint.html"  class="sidebar-tool-link active">
                 <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
             </a>
-            <a href="https://geritwagner.github.io/search-query/gui/translate.html" class="sidebar-tool-link">
+            <a href="https://geritwagner.github.io/search-query/translate.html" class="sidebar-tool-link">
                 <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Translate</p>
             </a>
-            
+
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
-            <a href="https://geritwagner.github.io/search-query/gui/tokenizer.html"  class="sidebar-tool-link">
+            <a href="https://geritwagner.github.io/search-query/tokenizer.html"  class="sidebar-tool-link">
                 <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
             </a>
-            <a href="https://geritwagner.github.io/search-query/gui/structure.html" class="sidebar-tool-link">
+            <a href="https://geritwagner.github.io/search-query/structure.html" class="sidebar-tool-link">
                 <i class="fas fa-sitemap w-5 mr-3"></i>
                 <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Structure</p>
             </a>
@@ -383,12 +383,12 @@
             <a href="https://github.com/CoLRev-Environment/search-query/blob/main/LICENSE" target="_blank" class="sidebar-tool-link">
                 <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">License</p>
             </a>
-        </div>        
+        </div>
         <footer style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-body);">
             Search-Query Studio © 2025
         </footer>
     </nav>
-    
+
     <div id="main-content">
         <div id="interactive-tool-wrap">
             <div class="main-container">
@@ -406,7 +406,7 @@
                         <div class="loader"></div>
                         <div id="loading-text">Initializing Search Query...</div>
                     </div>
-                    
+
                     <div id="content-wrapper">
                         <div id="visualizer-content">
                             <header>
@@ -436,7 +436,7 @@
     </div>
 
     <script src="structure.js"></script>
-    
+
     <script>
         const DOM = {
             sidebar: document.getElementById('sidebar'),
@@ -448,7 +448,7 @@
 
         const isEmbedded = window.parent !== window;
         let lastSentHeight = 0;
-        
+
         if (isEmbedded) {
             document.body.classList.add('iframe-mode');
             DOM.sidebar.style.display = 'none';
@@ -462,7 +462,7 @@
             if (shouldOpen) {
                 DOM.sidebar.classList.add('open');
                 DOM.backdrop.style.display = 'block';
-                document.body.style.overflow = 'hidden'; 
+                document.body.style.overflow = 'hidden';
             } else {
                 DOM.sidebar.classList.remove('open');
                 DOM.backdrop.style.display = 'none';
@@ -484,7 +484,7 @@
 
         function sendHeight() {
             if (!isEmbedded) return;
-            
+
             // Calculate height based on the main-container's scroll height
             const mainContainer = document.querySelector('.main-container');
             if (!mainContainer) return;
@@ -542,11 +542,11 @@
                 if (shouldUpdate) debouncedSendHeight();
             });
 
-            observer.observe(document.querySelector('.main-container'), { 
-                childList: true, 
-                subtree: true, 
-                attributes: true, 
-                attributeFilter: ['style', 'class'] 
+            observer.observe(document.querySelector('.main-container'), {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class']
             });
 
             document.getElementById('btn-visualize')?.addEventListener('click', () => {
