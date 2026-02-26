@@ -14,6 +14,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SEARCH_QUERY_UPSTREAM_REPO: CoLRev-Environment/search-query
 
     steps:
       - name: Checkout repository
@@ -41,9 +43,19 @@ jobs:
           mkdir -p _build/html/gui
           cp -r docs/gui/* _build/html/gui/
 
+      - name: Retrieve upstream package files
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SEARCH_QUERY_UPSTREAM_REPO }}
+          path: _upstream
+          sparse-checkout: |
+            search_query
+
+      - name: Add search_query package to GUI
+        run: |
           TARGET_DIR="_build/html/gui/search_query"
           mkdir -p "$TARGET_DIR"
-          cp -r search_query/* "$TARGET_DIR"/
+          cp -r _upstream/search_query/* "$TARGET_DIR"/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
